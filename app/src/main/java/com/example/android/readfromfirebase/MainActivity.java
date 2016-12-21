@@ -26,7 +26,8 @@ public class MainActivity extends AppCompatActivity {
     private double longNum;
     private Query query;
     private ChildEventListener mChildEventListener;
-
+    private DatabaseReference ref;
+    private String key;  //id of new location set
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +38,9 @@ public class MainActivity extends AppCompatActivity {
 
         meetUpDatabase = FirebaseDatabase.getInstance();
         meetUpDatabaseReference = meetUpDatabase.getReference().child("meetUpLocation");
+
+        ref = meetUpDatabase.getReference().child("locations");
+
         query = meetUpDatabase.getReference().child("meetUpLocation").orderByChild("lat").equalTo(60);
 
         Button send = (Button) findViewById(R.id.sendDataButton);
@@ -59,12 +63,14 @@ public class MainActivity extends AppCompatActivity {
                 longNum = Double.parseDouble(longString);
 
                 ScheduleMeetup meetup = new ScheduleMeetup(latNum,longNum,message.getText().toString());
-                meetUpDatabaseReference.push().setValue(meetup);
+                DatabaseReference newMeetup = meetUpDatabaseReference.push();
+                newMeetup.setValue(meetup);
 
-                DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("Locations");
+                key = newMeetup.getKey();
 
-                GeoFire geoFire = new GeoFire(meetUpDatabaseReference);
-                geoFire.setLocation("firebase-hq", new GeoLocation(39.7853889, -125.4056973));
+
+                GeoFire geoFire = new GeoFire(ref);
+                geoFire.setLocation(key, new GeoLocation(latNum, longNum));
                // geoFire.removeLocation("firebase-hq");
 
 
