@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
@@ -10,21 +10,37 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.android.readfromfirebase.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        android:id="@+id/textView" />
-
     <Button
         android:text="@string/get_data_from_firebase"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textView"
-        android:layout_toEndOf="@+id/textView"
-        android:layout_marginStart="69dp"
-        android:layout_marginTop="102dp"
         android:id="@+id/getData"
         android:onClick="getData"
         />
-</RelativeLayout>
+
+    <Button
+        android:text="send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/sendDataButton"
+        android:onClick="sendData"
+        />
+
+    <EditText
+        android:text="60.0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/latitude" />
+
+    <EditText
+        android:text="6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/longitude" />
+
+    <EditText
+        android:text="Type Message Here"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/message" />
+</LinearLayout>
