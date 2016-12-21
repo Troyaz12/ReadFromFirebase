@@ -6,6 +6,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.firebase.geofire.GeoFire;
+import com.firebase.geofire.GeoLocation;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -58,6 +60,14 @@ public class MainActivity extends AppCompatActivity {
 
                 ScheduleMeetup meetup = new ScheduleMeetup(latNum,longNum,message.getText().toString());
                 meetUpDatabaseReference.push().setValue(meetup);
+
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("Locations");
+
+                GeoFire geoFire = new GeoFire(meetUpDatabaseReference);
+                geoFire.setLocation("firebase-hq", new GeoLocation(39.7853889, -125.4056973));
+               // geoFire.removeLocation("firebase-hq");
+
+
 
                 //clear input boxes
                 latitude.setText("");
