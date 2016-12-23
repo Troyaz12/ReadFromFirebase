@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
@@ -9,22 +9,6 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.android.readfromfirebase.MainActivity">
-
-    <Button
-        android:text="@string/get_data_from_firebase"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/getData"
-        android:onClick="getData"
-        />
-
-    <Button
-        android:text="send"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/sendDataButton"
-        android:onClick="sendData"
-        />
 
     <EditText
         android:text="60.0"
@@ -36,11 +20,43 @@
         android:text="6"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/longitude" />
+        android:id="@+id/longitude"
+        android:layout_toRightOf="@id/latitude"
+        android:layout_marginLeft="30dp"/>
 
     <EditText
         android:text="Type Message Here"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/message" />
-</LinearLayout>
+        android:id="@+id/message"
+        android:layout_below="@+id/longitude"/>
+
+    <Button
+        android:text="@string/get_data_from_firebase"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/getData"
+        android:onClick="getData"
+        android:layout_below="@+id/message"
+        android:layout_marginRight="30dp"
+        />
+
+    <Button
+        android:text="send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/sendDataButton"
+        android:onClick="sendData"
+        android:layout_marginLeft="30dp"
+        android:layout_toEndOf="@+id/longitude"
+        android:layout_marginStart="81dp"
+        android:layout_alignBottom="@+id/getData" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/getData"
+        android:layout_marginTop="109dp"
+        android:id="@+id/textView"
+        android:layout_toStartOf="@+id/sendDataButton" />
+</RelativeLayout>

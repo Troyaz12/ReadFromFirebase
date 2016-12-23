@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">ReadFromFirebase</string>
-    <string name="get_data_from_firebase">Get Data From Firebase</string>
+    <string name="get_data_from_firebase">Get Data</string>
 </resources>

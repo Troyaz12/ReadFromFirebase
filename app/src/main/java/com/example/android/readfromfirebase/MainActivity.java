@@ -1,13 +1,26 @@
 package com.example.android.readfromfirebase;
 
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -15,7 +28,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private FirebaseDatabase meetUpDatabase;
     private DatabaseReference meetUpDatabaseReference;
@@ -28,10 +41,27 @@ public class MainActivity extends AppCompatActivity {
     private ChildEventListener mChildEventListener;
     private DatabaseReference ref;
     private String key;  //id of new location set
+    private GeoFire geoFire;
+    private GeoQuery geoQuery;
+    private GoogleApiClient mGoogleApiClient;
+    private LocationRequest mLocationRequest;
+    private TextView txtOutput;
+    private double currenrtLatitude;
+    private double currentLongitude;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+
+        txtOutput = (TextView) findViewById(R.id.textView);
+
 
         FirebaseDatabase.getInstance().setPersistenceEnabled(true);
 
@@ -40,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         meetUpDatabaseReference = meetUpDatabase.getReference().child("meetUpLocation");
 
         ref = meetUpDatabase.getReference().child("locations");
+        geoFire = new GeoFire(ref);
 
         query = meetUpDatabase.getReference().child("meetUpLocation").orderByChild("lat").equalTo(60);
 
@@ -47,10 +78,10 @@ public class MainActivity extends AppCompatActivity {
         latitude = (EditText) findViewById(R.id.latitude);
         longitude = (EditText) findViewById(R.id.longitude);
         message = (EditText) findViewById(R.id.message);
+        geoQuery = geoFire.queryAtLocation(new GeoLocation(currenrtLatitude, currentLongitude), 0.6);
 
 
-
-        send.setOnClickListener(new View.OnClickListener(){
+        send.setOnClickListener(new View.OnClickListener() {
 
 
             @Override
@@ -62,17 +93,15 @@ public class MainActivity extends AppCompatActivity {
                 latNum = Double.parseDouble(latString);
                 longNum = Double.parseDouble(longString);
 
-                ScheduleMeetup meetup = new ScheduleMeetup(latNum,longNum,message.getText().toString());
+                ScheduleMeetup meetup = new ScheduleMeetup(latNum, longNum, message.getText().toString());
                 DatabaseReference newMeetup = meetUpDatabaseReference.push();
                 newMeetup.setValue(meetup);
 
                 key = newMeetup.getKey();
 
 
-                GeoFire geoFire = new GeoFire(ref);
                 geoFire.setLocation(key, new GeoLocation(latNum, longNum));
-               // geoFire.removeLocation("firebase-hq");
-
+                // geoFire.removeLocation("firebase-hq");
 
 
                 //clear input boxes
@@ -88,6 +117,47 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+                System.out.println(String.format("Key %s entered the search area at [%f,%f]", key, location.latitude, location.longitude));
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+                System.out.println(String.format("Key %s is no longer in the search area", key));
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+                System.out.println(String.format("Key %s moved within the search area to [%f,%f]", key, location.latitude, location.longitude));
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+                System.out.println("All initial data has been loaded and events have been fired!");
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+                System.err.println("There was an error with this query: " + error);
+            }
+        });
+
+
+    }
+
+    protected void onStop() {
+        super.onStop();
+        mGoogleApiClient.disconnect();
+
+    }
+
     private void attachDatabaseReadListener() {
 
         if (mChildEventListener == null) {
@@ -95,25 +165,75 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                     ScheduleMeetup meetUp = dataSnapshot.getValue(ScheduleMeetup.class);
-                    System.out.println("data: "+meetUp.getMessage());
+                    txtOutput.setText(meetUp.getMessage());
+                    //System.out.println("data: " + meetUp.getMessage());
                 }
 
-                public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
-                public void onChildRemoved(DataSnapshot dataSnapshot) {}
-                public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
-                public void onCancelled(DatabaseError databaseError) {}
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                }
+
+                public void onChildRemoved(DataSnapshot dataSnapshot) {
+                }
+
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                }
+
+                public void onCancelled(DatabaseError databaseError) {
+                }
             };
             query.addChildEventListener(mChildEventListener);
         }
 
 
     }
-    public void sendData(View view){
+
+    public void sendData(View view) {
 
     }
 
-    public void getData(View view){
+    public void getData(View view) {
+
 
     }
 
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        startLocationUpdates();
+
+    }
+
+    protected void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(
+                mGoogleApiClient, mLocationRequest, this);
+    }
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+      //  txtOutput.setText(Double.toString(location.getLatitude()));
+        geoQuery.setCenter(new GeoLocation(currenrtLatitude,currentLongitude));
+    }
 }
