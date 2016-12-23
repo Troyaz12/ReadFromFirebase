@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         latitude = (EditText) findViewById(R.id.latitude);
         longitude = (EditText) findViewById(R.id.longitude);
         message = (EditText) findViewById(R.id.message);
-        geoQuery = geoFire.queryAtLocation(new GeoLocation(currenrtLatitude, currentLongitude), 0.6);
+        geoQuery = geoFire.queryAtLocation(new GeoLocation(currenrtLatitude, currentLongitude), 5.6);
 
 
         send.setOnClickListener(new View.OnClickListener() {
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             }
         });
-        attachDatabaseReadListener();
+       // attachDatabaseReadListener();
 
 
     }
@@ -122,10 +122,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onStart();
         mGoogleApiClient.connect();
 
+        //adds event listener to listen for when the device enters the target zone
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
                 System.out.println(String.format("Key %s entered the search area at [%f,%f]", key, location.latitude, location.longitude));
+                txtOutput.setText("Entered area "+key);
             }
 
             @Override
@@ -234,6 +236,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onLocationChanged(Location location) {
       //  txtOutput.setText(Double.toString(location.getLatitude()));
+        currenrtLatitude = location.getLatitude();
+        currentLongitude=location.getLongitude();
+
         geoQuery.setCenter(new GeoLocation(currenrtLatitude,currentLongitude));
+        geoQuery.setRadius(5);
+        System.out.println("lat and long: "+currenrtLatitude+" "+currentLongitude);
     }
 }
