@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.firebase.geofire.GeoFire;
@@ -31,6 +32,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
@@ -53,7 +56,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private TextView txtOutput;
     private double currenrtLatitude;
     private double currentLongitude;
-
+    private MeetupAdapter mMessageAdapter;
+    private ListView mMessageListView;
+    private Location mLastLocation;
 
 
     @Override
@@ -79,13 +84,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         ref = meetUpDatabase.getReference().child("locations");
         geoFire = new GeoFire(ref);
 
-    //    query = meetUpDatabase.getReference().child("meetUpLocation").orderByChild("lat").equalTo(60);
+        //    query = meetUpDatabase.getReference().child("meetUpLocation").orderByChild("lat").equalTo(60);
 
         Button send = (Button) findViewById(R.id.sendDataButton);
         latitude = (EditText) findViewById(R.id.latitude);
         longitude = (EditText) findViewById(R.id.longitude);
         message = (EditText) findViewById(R.id.message);
+        mMessageListView = (ListView) findViewById(R.id.messageListView);
+
         geoQuery = geoFire.queryAtLocation(new GeoLocation(currenrtLatitude, currentLongitude), 5.6);
+
+        // Initialize message ListView and its adapter
+        List<ScheduleMeetup> friendlyMessages = new ArrayList<>();
+        mMessageAdapter = new MeetupAdapter(this, R.layout.item_message, friendlyMessages);
+        mMessageListView.setAdapter(mMessageAdapter);
 
 
         send.setOnClickListener(new View.OnClickListener() {
@@ -97,17 +109,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 String longString = longitude.getText().toString();
 
 
-                latNum = Double.parseDouble(latString);
-                longNum = Double.parseDouble(longString);
+                //    latNum = Double.parseDouble(latString);
+                //   longNum = Double.parseDouble(longString);
 
-                ScheduleMeetup meetup = new ScheduleMeetup(latNum, longNum, message.getText().toString());
+                ScheduleMeetup meetup = new ScheduleMeetup(currenrtLatitude, currentLongitude, message.getText().toString());
                 DatabaseReference newMeetup = meetUpDatabaseReference.push();
                 newMeetup.setValue(meetup);
 
                 key = newMeetup.getKey();
 
 
-                geoFire.setLocation(key, new GeoLocation(latNum, longNum));
+                geoFire.setLocation(key, new GeoLocation(currenrtLatitude, currentLongitude));
                 // geoFire.removeLocation("firebase-hq");
 
 
@@ -119,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             }
         });
-       // attachDatabaseReadListener();
+        // attachDatabaseReadListener();
 
 
     }
@@ -129,10 +141,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onStart();
         mGoogleApiClient.connect();
 
+
         //adds event listener to listen for when the device enters the target zone
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
-            public Map<String,Marker> markers;
+            public Map<String, Marker> markers;
             private GoogleMap map;
+
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
                 System.out.println(String.format("Key %s entered the search area at [%f,%f]", key, location.latitude, location.longitude));
@@ -143,8 +157,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         ScheduleMeetup meetUp = dataSnapshot.getValue(ScheduleMeetup.class);
-                        txtOutput.setText(meetUp.getMessage());
-                        System.out.println("query has been triggered.");
+                        //     txtOutput.setText(meetUp.getMessage());
+                        System.out.println("query has been triggered: " + meetUp.getMessage());
+                        mMessageAdapter.add(meetUp);
                     }
 
                     @Override
@@ -153,15 +168,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     }
                 });
 
-             //   String message = query.getRef().orderByChild("message").toString();
+                //   String message = query.getRef().orderByChild("message").toString();
 
 
-              //  meetUpDatabaseReference.child("key").child("message").;
-              //  txtOutput.setText(message);
+                //  meetUpDatabaseReference.child("key").child("message").;
+                //  txtOutput.setText(message);
 
                 // Add a new marker to the map
-         //       Marker marker = this.map.addMarker(new MarkerOptions().position(new LatLng(location.latitude, location.longitude)));
-           //     this.markers.put(key, marker);
+                //       Marker marker = this.map.addMarker(new MarkerOptions().position(new LatLng(location.latitude, location.longitude)));
+                //     this.markers.put(key, marker);
 
 
             }
@@ -242,7 +257,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         startLocationUpdates();
-
     }
 
     protected void startLocationUpdates() {
@@ -256,8 +270,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 mGoogleApiClient, mLocationRequest, this);
+
+        //get current location
+        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        currenrtLatitude = mLastLocation.getLatitude();
+        currentLongitude = mLastLocation.getLongitude();
+        System.out.println("lat and long on start: "+currenrtLatitude+" "+currentLongitude);
+
+
     }
     @Override
     public void onConnectionSuspended(int i) {
