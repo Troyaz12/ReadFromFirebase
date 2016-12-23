@@ -72,9 +72,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .addOnConnectionFailedListener(this)
                 .build();
 
-        txtOutput = (TextView) findViewById(R.id.textView);
-
-
         FirebaseDatabase.getInstance().setPersistenceEnabled(true);
 
 
@@ -87,8 +84,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         //    query = meetUpDatabase.getReference().child("meetUpLocation").orderByChild("lat").equalTo(60);
 
         Button send = (Button) findViewById(R.id.sendDataButton);
-        latitude = (EditText) findViewById(R.id.latitude);
-        longitude = (EditText) findViewById(R.id.longitude);
         message = (EditText) findViewById(R.id.message);
         mMessageListView = (ListView) findViewById(R.id.messageListView);
 
@@ -105,12 +100,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             @Override
             public void onClick(View view) {
-                String latString = latitude.getText().toString();
-                String longString = longitude.getText().toString();
-
-
-                //    latNum = Double.parseDouble(latString);
-                //   longNum = Double.parseDouble(longString);
 
                 ScheduleMeetup meetup = new ScheduleMeetup(currenrtLatitude, currentLongitude, message.getText().toString());
                 DatabaseReference newMeetup = meetUpDatabaseReference.push();
@@ -118,10 +107,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                 key = newMeetup.getKey();
 
-
                 geoFire.setLocation(key, new GeoLocation(currenrtLatitude, currentLongitude));
                 // geoFire.removeLocation("firebase-hq");
-
 
                 //clear input boxes
                 latitude.setText("");

@@ -17,21 +17,6 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-
-    <EditText
-        android:text="60.0"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/latitude" />
-
-    <EditText
-        android:text="6"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/longitude"
-        android:layout_toRightOf="@id/latitude"
-        android:layout_marginLeft="30dp"/>
-
     <EditText
         android:text="Type Message Here"
         android:layout_width="wrap_content"
@@ -49,13 +34,6 @@
         android:layout_marginStart="81dp"
        />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/getData"
-        android:layout_marginTop="109dp"
-        android:id="@+id/textView"
-        />
     </LinearLayout>
     <ListView
         android:id="@+id/messageListView"
