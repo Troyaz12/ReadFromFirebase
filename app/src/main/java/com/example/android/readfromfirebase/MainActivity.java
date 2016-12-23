@@ -21,12 +21,17 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.Marker;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
@@ -48,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private TextView txtOutput;
     private double currenrtLatitude;
     private double currentLongitude;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         ref = meetUpDatabase.getReference().child("locations");
         geoFire = new GeoFire(ref);
 
-        query = meetUpDatabase.getReference().child("meetUpLocation").orderByChild("lat").equalTo(60);
+    //    query = meetUpDatabase.getReference().child("meetUpLocation").orderByChild("lat").equalTo(60);
 
         Button send = (Button) findViewById(R.id.sendDataButton);
         latitude = (EditText) findViewById(R.id.latitude);
@@ -124,10 +131,39 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         //adds event listener to listen for when the device enters the target zone
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            public Map<String,Marker> markers;
+            private GoogleMap map;
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
                 System.out.println(String.format("Key %s entered the search area at [%f,%f]", key, location.latitude, location.longitude));
-                txtOutput.setText("Entered area "+key);
+
+                //get reference to meetUpLocations and get message using key from the geoQuery
+                meetUpDatabase.getReference("meetUpLocation")
+                        .child(key).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        ScheduleMeetup meetUp = dataSnapshot.getValue(ScheduleMeetup.class);
+                        txtOutput.setText(meetUp.getMessage());
+                        System.out.println("query has been triggered.");
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+             //   String message = query.getRef().orderByChild("message").toString();
+
+
+              //  meetUpDatabaseReference.child("key").child("message").;
+              //  txtOutput.setText(message);
+
+                // Add a new marker to the map
+         //       Marker marker = this.map.addMarker(new MarkerOptions().position(new LatLng(location.latitude, location.longitude)));
+           //     this.markers.put(key, marker);
+
+
             }
 
             @Override
