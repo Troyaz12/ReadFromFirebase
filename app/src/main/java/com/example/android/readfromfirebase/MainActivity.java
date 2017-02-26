@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private Location mLastLocation;
     private List<ScheduleMeetup> friendlyMessages;
     private DatabaseReference messageDelete;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,29 +81,33 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             meetUpDatabaseReference = meetUpDatabase.getReference().child("meetUpLocation");
             DatabaseReference meetUpDatabaseLocation = meetUpDatabase.getReference().child("locations");
 
+            String oneLocation="-Kdrc93Ug0cWZfCMYt31";
         //how to delete a location in firebase
-            String location = "-KdrxG8FhmuB0dn0O9g2";
-            meetUpDatabaseReference.child(location).removeValue();
-            meetUpDatabaseLocation.child(location).removeValue();
+            meetUpDatabaseReference.child(oneLocation).removeValue();
+            meetUpDatabaseLocation.child(oneLocation).removeValue();
+            final String location[] = {"-Kdrc93Ug0cWZfCMYt31","-Kdrc9FbYjOoARZOJDEx","-Kdrc9q5mGDUWcmyNM3Y","-Kdrc9wy8Z-WnJFBjBUJ","-KdrcA2idmhc_AGwKC6J","-KdrcA7sgPrBUsmcdyi2","-KdrcAETm8FXWO3lz4sq"};
 
+            for(int x=0;x<location.length;x++) {
+                final int y=x;
+                meetUpDatabaseReference.child(location[x]).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
 
-            meetUpDatabaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    if(dataSnapshot.hasChild("-Kdrc4bU2yVEK9f4Ay3b")){
-                        System.out.println("Listen Still there listener");
+                        if (dataSnapshot.exists()) {
+                            System.out.println("Listen Still there"+location[y]);
 
-                    }else {
-                        System.out.println("Listen not there listener");
+                        } else {
+                            System.out.println("Listen not there"+location[y]);
+                        }
                     }
-                }
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
 
-                }
-            });
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
 
+                    }
+                });
+            }
         //    messageDelete.attachDatabaseReadListener();
         }
 
@@ -160,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mGoogleApiClient.connect();
 
 
-        //adds event listener to listen for when the device enters the target zone
+        //adds event listener to listen for when the device enters the target zone, uses geofire
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             public Map<String, Marker> markers;
             private GoogleMap map;
