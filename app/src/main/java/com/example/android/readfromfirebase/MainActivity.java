@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -59,8 +60,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private MeetupAdapter mMessageAdapter;
     private ListView mMessageListView;
     private Location mLastLocation;
-
-
+    private List<ScheduleMeetup> friendlyMessages;
+    private DatabaseReference messageDelete;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,11 +73,45 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .addOnConnectionFailedListener(this)
                 .build();
 
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+
+        if (meetUpDatabase == null) {
+          //  FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+            meetUpDatabase = FirebaseDatabase.getInstance();
+            meetUpDatabaseReference = meetUpDatabase.getReference().child("meetUpLocation");
+            DatabaseReference meetUpDatabaseLocation = meetUpDatabase.getReference().child("locations");
+
+        //how to delete a location in firebase
+            String location = "-KdrxG8FhmuB0dn0O9g2";
+            meetUpDatabaseReference.child(location).removeValue();
+            meetUpDatabaseLocation.child(location).removeValue();
 
 
-        meetUpDatabase = FirebaseDatabase.getInstance();
-        meetUpDatabaseReference = meetUpDatabase.getReference().child("meetUpLocation");
+            meetUpDatabaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if(dataSnapshot.hasChild("-Kdrc4bU2yVEK9f4Ay3b")){
+                        System.out.println("Listen Still there listener");
+
+                    }else {
+                        System.out.println("Listen not there listener");
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
+        //    messageDelete.attachDatabaseReadListener();
+        }
+
+
+       // FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+
+
+   //     meetUpDatabase = FirebaseDatabase.getInstance();
+    //    meetUpDatabaseReference = meetUpDatabase.getReference().child("meetUpLocation");
 
         ref = meetUpDatabase.getReference().child("locations");
         geoFire = new GeoFire(ref);
@@ -87,10 +122,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         message = (EditText) findViewById(R.id.message);
         mMessageListView = (ListView) findViewById(R.id.messageListView);
 
-        geoQuery = geoFire.queryAtLocation(new GeoLocation(currenrtLatitude, currentLongitude), 5.6);
+        geoQuery = geoFire.queryAtLocation(new GeoLocation(currenrtLatitude, currentLongitude), 1.0);
 
         // Initialize message ListView and its adapter
-        List<ScheduleMeetup> friendlyMessages = new ArrayList<>();
+        friendlyMessages = new ArrayList<>();
         mMessageAdapter = new MeetupAdapter(this, R.layout.item_message, friendlyMessages);
         mMessageListView.setAdapter(mMessageAdapter);
 
@@ -105,17 +140,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 DatabaseReference newMeetup = meetUpDatabaseReference.push();
                 newMeetup.setValue(meetup);
 
-                key = newMeetup.getKey();
+                key = newMeetup.getKey();  //sets key for message in the location section
 
                 geoFire.setLocation(key, new GeoLocation(currenrtLatitude, currentLongitude));
                 // geoFire.removeLocation("firebase-hq");
 
                 //clear input boxes
-                latitude.setText("");
-                longitude.setText("");
                 message.setText("");
-
-
             }
         });
         // attachDatabaseReadListener();
@@ -145,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         ScheduleMeetup meetUp = dataSnapshot.getValue(ScheduleMeetup.class);
                         //     txtOutput.setText(meetUp.getMessage());
-                        System.out.println("query has been triggered: " + meetUp.getMessage());
+                        System.out.println("query has been triggered: " + meetUp.getMessage()+" "+"KEY: "+dataSnapshot.getKey());
                         mMessageAdapter.add(meetUp);
                     }
 
@@ -171,6 +202,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onKeyExited(String key) {
                 System.out.println(String.format("Key %s is no longer in the search area", key));
+
             }
 
             @Override
@@ -186,6 +218,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onGeoQueryError(DatabaseError error) {
                 System.err.println("There was an error with this query: " + error);
+                new AlertDialog.Builder(getBaseContext())
+                        .setTitle("Error")
+                        .setMessage("There was an unexpected error querying GeoFire: " + error.getMessage())
+                        .setPositiveButton(android.R.string.ok, null)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
             }
         });
 
@@ -194,11 +232,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     protected void onStop() {
         super.onStop();
+     //   this.geoQuery.removeAllListeners();
         mGoogleApiClient.disconnect();
+        friendlyMessages.clear();
+        mMessageAdapter.clear();
+        mMessageListView.deferNotifyDataSetChanged();
 
     }
 
-    private void attachDatabaseReadListener() {
+    public void attachDatabaseReadListener() {
 
         if (mChildEventListener == null) {
             mChildEventListener = new ChildEventListener() {
@@ -213,6 +255,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 }
 
                 public void onChildRemoved(DataSnapshot dataSnapshot) {
+                    System.out.println("Message reomoved.");
+
                 }
 
                 public void onChildMoved(DataSnapshot dataSnapshot, String s) {
